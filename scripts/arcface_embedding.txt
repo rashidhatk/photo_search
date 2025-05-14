@@ -1,0 +1,30 @@
+import os
+import sys
+import json
+import warnings
+import cv2
+import numpy as np
+from insightface.app import FaceAnalysis
+
+# Silence EVERYTHING
+os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1"
+warnings.filterwarnings("ignore")
+sys.stderr = open(os.devnull, "w")
+sys.stdout = open(os.devnull, "w")  # Silence stdout too
+
+# Initialize model
+app = FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
+app.prepare(ctx_id=0, det_size=(640, 640))
+
+def get_embedding(image_path):
+    img = cv2.imread(image_path)
+    if img is None:
+        return None
+    faces = app.get(img)
+    return faces[0].embedding.tolist() if faces else None
+
+if __name__ == "__main__":
+    embedding = get_embedding(sys.argv[1])
+    # Print ONLY the JSON array to stdout
+    sys.stdout = sys.__stdout__  # Restore stdout
+    print(json.dumps(embedding if embedding else []))
